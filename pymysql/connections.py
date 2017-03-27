@@ -55,28 +55,6 @@ if _py_version == (2, 7) and not IRONPYTHON:
 
     def _makefile(sock, mode):
         return io.BufferedReader(SocketIO(sock, mode))
-elif _py_version == (2, 6):
-    # Python 2.6 doesn't have fast io module.
-    # So we make original one.
-    class SockFile(object):
-        def __init__(self, sock):
-            self._sock = sock
-
-        def read(self, n):
-            read = self._sock.recv(n)
-            if len(read) == n:
-                return read
-            while True:
-                data = self._sock.recv(n-len(read))
-                if not data:
-                    return read
-                read += data
-                if len(read) == n:
-                    return read
-
-    def _makefile(sock, mode):
-        assert mode == 'rb'
-        return SockFile(sock)
 else:
     # socket.makefile in Python 3 is nice.
     def _makefile(sock, mode):

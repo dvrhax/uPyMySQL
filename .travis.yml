@@ -4,7 +4,8 @@ language: python
 python:
   - "3.7-dev"
   - "3.6"
-  - "2.6"
+  - "3.5"
+  - "2.7"
   - "pypy3.3-5.2-alpha1"
 
 cache: pip
@@ -13,7 +14,7 @@ matrix:
   include:
     - addons:
        mariadb: 5.5
-      python: "3.5"
+      python: "3.6"
 
     - addons:
        mariadb: 10.0
@@ -29,7 +30,7 @@ matrix:
         apt:
           packages:
             - libaio-dev
-      python: "3.3"
+      python: "3.6"
 
     - env:
        - DB=5.7.17
@@ -37,7 +38,7 @@ matrix:
         apt:
           packages:
             - libaio-dev
-      python: "3.4"
+      python: "3.6"
 
 
 

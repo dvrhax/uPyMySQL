@@ -33,7 +33,7 @@ Requirements
 
 * Python -- one of the following:
 
-  - CPython_ >= 2.6 or >= 3.3
+  - CPython_ >= 2.7 or >= 3.5
   - PyPy_ >= 4.0
   - IronPython_ 2.7
 
@@ -42,10 +42,10 @@ Requirements
   - MySQL_ >= 4.1  (tested with only 5.5~)
   - MariaDB_ >= 5.1
 
-.. _CPython: http://www.python.org/
+.. _CPython: https://www.python.org/
 .. _PyPy: http://pypy.org/
 .. _IronPython: http://ironpython.net/
-.. _MySQL: http://www.mysql.com/
+.. _MySQL: https://www.mysql.com/
 .. _MariaDB: https://mariadb.org/
 
 
@@ -60,7 +60,7 @@ The last stable release is available on PyPI and can be installed with ``pip``::
 Documentation
 -------------
 
-Documentation is available online: http://pymysql.readthedocs.io/
+Documentation is available online: https://pymysql.readthedocs.io/
 
 For support, please refer to the `StackOverflow
 <http://stackoverflow.com/questions/tagged/pymysql>`_.
