@@ -1,7 +1,6 @@
 import unittest2
 
 from pymysql.tests import base
-from pymysql import util
 
 
 class TestNextset(base.PyMySQLTestCase):
