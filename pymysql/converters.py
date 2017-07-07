@@ -1,9 +1,15 @@
 from ._compat import PY2, text_type, long_type, JYTHON, IRONPYTHON, unichr
 
-import datetime
-from decimal import Decimal
-import re
-import time
+#import datetime
+#from decimal import Decimal
+
+#from .otime import time#as qtime
+from . import otime as time
+
+try: 
+    import re
+except ImportError:
+    import ure as re
 
 from .constants import FIELD_TYPE, FLAG
 from .charset import charset_by_id, charset_to_encoding
@@ -143,8 +149,8 @@ def escape_date(obj, mapping=None):
     fmt = "'{0.year:04}-{0.month:02}-{0.day:02}'"
     return fmt.format(obj)
 
-def escape_struct_time(obj, mapping=None):
-    return escape_datetime(datetime.datetime(*obj[:6]))
+#def escape_struct_time(obj, mapping=None):
+#    return escape_datetime(datetime.datetime(*obj[:6]))
 
 def _convert_second_fraction(s):
     if not s:
@@ -375,12 +381,12 @@ encoders = {
     dict: escape_dict,
     bytearray: escape_bytes,
     type(None): escape_None,
-    datetime.date: escape_date,
-    datetime.datetime: escape_datetime,
-    datetime.timedelta: escape_timedelta,
-    datetime.time: escape_time,
-    time.struct_time: escape_struct_time,
-    Decimal: escape_object,
+    #datetime.date: escape_date,
+    #datetime.datetime: escape_datetime,
+    #datetime.timedelta: escape_timedelta,
+    #datetime.time: escape_time,
+    #time.struct_time: escape_struct_time,
+    #Decimal: escape_object,
 }
 
 if not PY2 or JYTHON or IRONPYTHON:
@@ -408,8 +414,8 @@ decoders = {
     FIELD_TYPE.STRING: through,
     FIELD_TYPE.VAR_STRING: through,
     FIELD_TYPE.VARCHAR: through,
-    FIELD_TYPE.DECIMAL: Decimal,
-    FIELD_TYPE.NEWDECIMAL: Decimal,
+    #FIELD_TYPE.DECIMAL: Decimal,
+    #FIELD_TYPE.NEWDECIMAL: Decimal,
 }
 
 

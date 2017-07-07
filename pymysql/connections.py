@@ -2,25 +2,49 @@
 # http://dev.mysql.com/doc/internals/en/client-server-protocol.html
 # Error codes:
 # http://dev.mysql.com/doc/refman/5.5/en/error-messages-client.html
-from __future__ import print_function
+#from __future__ import print_function
 from ._compat import PY2, range_type, text_type, str_type, JYTHON, IRONPYTHON
 
-import errno
-from functools import partial
-import hashlib
-import io
-import os
-import socket
-import struct
+try:
+    import errno
+except ImportError:
+    import uerrno as errno
+
+#from functools import partial
+try:
+    import hashlib
+except ImportError:
+    import uhashlib as hashlib
+
+try:
+    import io
+except ImportError:
+    import uio as io
+
+try:
+    import os
+except ImportError:
+    import uos as os
+
+try:
+    import socket
+except ImportError:
+    import usocket as socket
+
+try:
+    import struct
+except ImportError:
+    import ustruct as struct
+
 import sys
-import traceback
-import warnings
+#import traceback
+#import warnings
 
 from .charset import MBLENGTH, charset_by_name, charset_by_id
 from .constants import CLIENT, COMMAND, CR, FIELD_TYPE, SERVER_STATUS
 from .converters import escape_item, escape_string, through, conversions as _conv
 from .cursors import Cursor
-from .optionfile import Parser
+#from .optionfile import Parser
 from .util import byte2int, int2byte
 from . import err
 
@@ -45,42 +69,9 @@ DEBUG = False
 _py_version = sys.version_info[:2]
 
 
-# socket.makefile() in Python 2 is not usable because very inefficient and
-# bad behavior about timeout.
-# XXX: ._socketio doesn't work under IronPython.
-if _py_version == (2, 7) and not IRONPYTHON:
-    # read method of file-like returned by sock.makefile() is very slow.
-    # So we copy io-based one from Python 3.
-    from ._socketio import SocketIO
-
-    def _makefile(sock, mode):
-        return io.BufferedReader(SocketIO(sock, mode))
-elif _py_version == (2, 6):
-    # Python 2.6 doesn't have fast io module.
-    # So we make original one.
-    class SockFile(object):
-        def __init__(self, sock):
-            self._sock = sock
-
-        def read(self, n):
-            read = self._sock.recv(n)
-            if len(read) == n:
-                return read
-            while True:
-                data = self._sock.recv(n-len(read))
-                if not data:
-                    return read
-                read += data
-                if len(read) == n:
-                    return read
-
-    def _makefile(sock, mode):
-        assert mode == 'rb'
-        return SockFile(sock)
-else:
-    # socket.makefile in Python 3 is nice.
-    def _makefile(sock, mode):
-        return sock.makefile(mode)
+# socket.makefile in Python 3 is nice.
+def _makefile(sock, mode):
+    return sock.makefile(mode)
 
 
 TEXT_TYPES = set([
@@ -94,7 +85,8 @@ TEXT_TYPES = set([
     FIELD_TYPE.VARCHAR,
     FIELD_TYPE.GEOMETRY])
 
-sha_new = partial(hashlib.new, 'sha1')
+#sha_new = partial(hashlib.new, 'sha1')
+sha_new = hashlib.sha1
 
 NULL_COLUMN = 251
 UNSIGNED_CHAR_COLUMN = 251
@@ -357,9 +349,22 @@ class MysqlPacket(object):
         return self.read(length)
 
     def read_struct(self, fmt):
-        s = struct.Struct(fmt)
-        result = s.unpack_from(self._data, self._position)
-        self._position += s.size
+        #uPython can't handle 'x' in the format so it needs some logic to remove it
+        if 'x' in fmt:
+            xIndex = [i - 1 for i, e in enumerate(fmt) if e == 'x'] #Get the index of each pad byte in the resulting tuple
+        else:
+            xIndex = []
+        fmt = fmt.replace('x', 'b')
+        #s = struct.Struct(fmt)
+        #result = s.unpack_from(self._data, self._position)
+        print('data', self._data, self._position)
+        print('fmt', fmt)
+        result = struct.unpack_from(fmt, self._data, self._position)
+        #remove all the padded indexes
+        result = [e for i, e in enumerate(result) if not i in xIndex]
+        print(result)
+        #self._position += s.size
+        self._position += struct.calcsize(fmt)
         return result
 
     def is_ok_packet(self):
@@ -582,13 +587,10 @@ class Connection(object):
                  read_default_file=None, conv=None, use_unicode=None,
                  client_flag=0, cursorclass=Cursor, init_command=None,
                  connect_timeout=10, ssl=None, read_default_group=None,
-                 compress=None, named_pipe=None, no_delay=None,
                  autocommit=False, db=None, passwd=None, local_infile=False,
                  max_allowed_packet=16*1024*1024, defer_connect=False,
                  auth_plugin_map={}, read_timeout=None, write_timeout=None,
                  bind_address=None):
-        if no_delay is not None:
-            warnings.warn("no_delay option is deprecated", DeprecationWarning)
 
         if use_unicode is None and sys.version_info[0] > 2:
             use_unicode = True
@@ -598,50 +600,10 @@ class Connection(object):
         if passwd is not None and not password:
             password = passwd
 
-        if compress or named_pipe:
-            raise NotImplementedError("compress and named_pipe arguments are not supported")
-
         self._local_infile = bool(local_infile)
         if self._local_infile:
             client_flag |= CLIENT.LOCAL_FILES
-
-        if read_default_group and not read_default_file:
-            if sys.platform.startswith("win"):
-                read_default_file = "c:\\my.ini"
-            else:
-                read_default_file = "/etc/my.cnf"
-
-        if read_default_file:
-            if not read_default_group:
-                read_default_group = "client"
-
-            cfg = Parser()
-            cfg.read(os.path.expanduser(read_default_file))
-
-            def _config(key, arg):
-                if arg:
-                    return arg
-                try:
-                    return cfg.get(read_default_group, key)
-                except Exception:
-                    return arg
-
-            user = _config("user", user)
-            password = _config("password", password)
-            host = _config("host", host)
-            database = _config("database", database)
-            unix_socket = _config("socket", unix_socket)
-            port = int(_config("port", port))
-            bind_address = _config("bind-address", bind_address)
-            charset = _config("default-character-set", charset)
-            if not ssl:
-                ssl = {}
-            if isinstance(ssl, dict):
-                for key in ["ca", "capath", "cert", "key", "cipher"]:
-                    value = _config("ssl-" + key, ssl.get(key))
-                    if value:
-                        ssl[key] = value
-
+        
         self.ssl = False
         if ssl:
             if not SSL_ENABLED:
@@ -897,12 +859,13 @@ class Connection(object):
         self.encoding = encoding
 
     def connect(self, sock=None):
+        print(self.host, self.port)
         self._closed = False
         try:
             if sock is None:
                 if self.unix_socket and self.host in ('localhost', '127.0.0.1'):
                     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                    sock.settimeout(self.connect_timeout)
+                    #sock.settimeout(self.connect_timeout)
                     sock.connect(self.unix_socket)
                     self.host_info = "Localhost via UNIX socket"
                     if DEBUG: print('connected using unix_socket')
@@ -910,20 +873,25 @@ class Connection(object):
                     kwargs = {}
                     if self.bind_address is not None:
                         kwargs['source_address'] = (self.bind_address, 0)
+                    addinfo = socket.getaddrinfo(self.host, self.port)[0][-1]
                     while True:
                         try:
-                            sock = socket.create_connection(
-                                (self.host, self.port), self.connect_timeout,
-                                **kwargs)
+                            #sock = socket.create_connection(#Need to implement in socket.connect
+                            #    (self.host, self.port), self.connect_timeout,
+                            #    **kwargs)
+                            sock = socket.socket()
+                            sock.connect(addinfo)
                             break
-                        except (OSError, IOError) as e:
+                        #except (OSError, IOError) as e:
+                        except OSError as e:
+                            print(e)
                             if e.errno == errno.EINTR:
                                 continue
                             raise
                     self.host_info = "socket %s:%d" % (self.host, self.port)
                     if DEBUG: print('connected using socket')
-                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                sock.settimeout(None)
+                    #sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                #sock.settimeout(None)
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             self._sock = sock
             self._rfile = _makefile(sock, 'rb')
@@ -952,7 +920,8 @@ class Connection(object):
                 except:
                     pass
 
-            if isinstance(e, (OSError, IOError, socket.error)):
+            #if isinstance(e, (OSError, IOError, socket.error)):
+            if isinstance(e, (OSError)):
                 exc = err.OperationalError(
                         2003,
                         "Can't connect to MySQL server on %r (%s)" % (
@@ -1010,13 +979,12 @@ class Connection(object):
                 continue
             if bytes_to_read < MAX_PACKET_LEN:
                 break
-
         packet = packet_type(buff, self.encoding)
         packet.check_error()
         return packet
 
     def _read_bytes(self, num_bytes):
-        self._sock.settimeout(self._read_timeout)
+        #self._sock.settimeout(self._read_timeout)
         while True:
             try:
                 data = self._rfile.read(num_bytes)
@@ -1035,14 +1003,24 @@ class Connection(object):
         return data
 
     def _write_bytes(self, data):
-        self._sock.settimeout(self._write_timeout)
+        #self._sock.settimeout(self._write_timeout)
         try:
-            self._sock.sendall(data)
-        except IOError as e:
+            self._sendall(data)
+        except OSError as e:
             self._force_close()
             raise err.OperationalError(
                 CR.CR_SERVER_GONE_ERROR,
                 "MySQL server has gone away (%r)" % (e,))
+
+    def _sendall(self, data):
+        totalsent = 0
+        datalen = len(data)
+        while totalsent < datalen:
+            sent = self._sock.send(data[totalsent:])
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent = totalsent + sent
+        return None
 
     def _read_query_result(self, unbuffered=False):
         if unbuffered:

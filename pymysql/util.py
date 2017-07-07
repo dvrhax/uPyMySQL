@@ -1,4 +1,7 @@
-import struct
+try:
+    import struct
+except ImportError:
+    import ustruct as struct
 
 
 def byte2int(b):

@@ -89,10 +89,10 @@ def Connect(*args, **kwargs):
     from .connections import Connection
     return Connection(*args, **kwargs)
 
-from . import connections as _orig_conn
-if _orig_conn.Connection.__init__.__doc__ is not None:
-    Connect.__doc__ = _orig_conn.Connection.__init__.__doc__
-del _orig_conn
+#from . import connections as _orig_conn
+#if _orig_conn.Connection.__init__.__doc__ is not None:
+    #Connect.__doc__ = _orig_conn.Connection.__init__.__doc__
+#del _orig_conn
 
 
 def get_client_info():  # for MySQLdb compatibility

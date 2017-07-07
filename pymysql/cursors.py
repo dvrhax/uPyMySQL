@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, absolute_import
-from functools import partial
-import re
-import warnings
+#from __future__ import print_function, absolute_import
+#from functools import partial
+#import warnings
+
+try: 
+    import re
+except ImportError:
+    import ure as re
 
 from ._compat import range_type, text_type, PY2
 from . import err
@@ -14,8 +18,8 @@ from . import err
 RE_INSERT_VALUES = re.compile(
     r"\s*((?:INSERT|REPLACE)\s.+\sVALUES?\s+)" +
     r"(\(\s*(?:%s|%\(.+\)s)\s*(?:,\s*(?:%s|%\(.+\)s)\s*)*\))" +
-    r"(\s*(?:ON DUPLICATE.*)?);?\s*\Z",
-    re.IGNORECASE | re.DOTALL)
+    r"(\s*(?:ON DUPLICATE.*)?);?\s*\Z")#,
+    #re.IGNORECASE | re.DOTALL)
 
 
 class Cursor(object):
@@ -109,7 +113,7 @@ class Cursor(object):
         return x
 
     def _escape_args(self, args, conn):
-        ensure_bytes = partial(self._ensure_bytes, encoding=conn.encoding)
+        #ensure_bytes = partial(self._ensure_bytes, encoding=conn.encoding)
 
         if isinstance(args, (tuple, list)):
             if PY2:
@@ -117,14 +121,14 @@ class Cursor(object):
             return tuple(conn.literal(arg) for arg in args)
         elif isinstance(args, dict):
             if PY2:
-                args = dict((ensure_bytes(key), ensure_bytes(val)) for
+                args = dict((self._ensure_bytes(key, conn.encoding), self._ensure_bytes(val, conn.encoding)) for
                             (key, val) in args.items())
             return dict((key, conn.literal(val)) for (key, val) in args.items())
         else:
             # If it's not a dictionary let's try escaping it anyways.
             # Worst case it will throw a Value error
             if PY2:
-                args = ensure_bytes(args)
+                args = self._ensure_bytes(args, conn.encoding)
             return conn.escape(args)
 
     def mogrify(self, query, args=None):
@@ -373,7 +377,9 @@ class DictCursorMixin(object):
     dict_type = dict
 
     def _do_get_result(self):
-        super(DictCursorMixin, self)._do_get_result()
+        print(dir(super(DictCursorMixin, self)))
+        #super(DictCursorMixin, self)._do_get_result()
+        super()._do_get_result()
         fields = []
         if self.description:
             for f in self._result.fields:

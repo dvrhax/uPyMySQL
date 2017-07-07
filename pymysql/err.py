@@ -1,4 +1,7 @@
-import struct
+try:
+    import struct
+except ImportError:
+    import ustruct as struct
 
 from .constants import ER
 
@@ -7,7 +10,7 @@ class MySQLError(Exception):
     """Exception related to operation with MySQL."""
 
 
-class Warning(Warning, MySQLError):
+class Warning(MySQLError):#Changed from Warning(Warning, MySQLError)
     """Exception raised for important warnings like data truncations
     while inserting, etc."""
 
