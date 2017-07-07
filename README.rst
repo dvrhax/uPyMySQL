@@ -21,14 +21,14 @@ their usecase.  Ditto for uPyMySQL
 Requirements
 -------------
 
-* uPython
+* uPython_
 
 * MySQL Server -- one of the following:
 
   - MySQL_ >= 4.1  (tested with only 5.5~)
   - MariaDB_ >= 5.1
 
-.. _uPython: http://www.python.org/
+.. _uPython: https://micropython.org/
 .. _MySQL: http://www.mysql.com/
 .. _MariaDB: https://mariadb.org/
 
@@ -113,6 +113,8 @@ http://dev.mysql.com/doc/internals/en/client-server-protocol.html
 PyMySQL mailing list: https://groups.google.com/forum/#!forum/pymysql-users
 
 PyMySQL Github site: https://github.com/PyMySQL/PyMySQL
+
+uPython: https://micropython.org/
 
 License
 -------
