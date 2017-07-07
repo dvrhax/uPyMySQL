@@ -1,15 +1,5 @@
-.. image:: https://readthedocs.org/projects/pymysql/badge/?version=latest
-    :target: http://pymysql.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-
-.. image:: https://travis-ci.org/PyMySQL/PyMySQL.svg?branch=master
-    :target: https://travis-ci.org/PyMySQL/PyMySQL
-
-.. image:: https://coveralls.io/repos/PyMySQL/PyMySQL/badge.svg?branch=master&service=github
-    :target: https://coveralls.io/github/PyMySQL/PyMySQL?branch=master
-
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/PyMySQL/PyMySQL/blob/master/LICENSE
+    :target: https://github.com/PyMySQL/uPyMySQL/blob/master/LICENSE
 
 
 PyMySQL
@@ -18,33 +8,27 @@ PyMySQL
 .. contents:: Table of Contents
    :local:
 
-This package contains a pure-Python MySQL client library. The goal of PyMySQL
-is to be a drop-in replacement for MySQLdb and work on CPython, PyPy and IronPython.
+This package contains a pretty rough hack of the pure-Python MySQL client library. The goal of uPyMySQL
+is to be a drop-in replacement for MySQLdb and work on uPython.
 
 NOTE: PyMySQL doesn't support low level APIs `_mysql` provides like `data_seek`,
 `store_result`, and `use_result`. You should use high level APIs defined in `PEP 249`_.
 But some APIs like `autocommit` and `ping` are supported because `PEP 249`_ doesn't cover
-their usecase.
+their usecase.  Ditto for uPyMySQL
 
 .. _`PEP 249`: https://www.python.org/dev/peps/pep-0249/
 
 Requirements
 -------------
 
-* Python -- one of the following:
-
-  - CPython_ >= 2.6 or >= 3.3
-  - PyPy_ >= 4.0
-  - IronPython_ 2.7
+* uPython
 
 * MySQL Server -- one of the following:
 
   - MySQL_ >= 4.1  (tested with only 5.5~)
   - MariaDB_ >= 5.1
 
-.. _CPython: http://www.python.org/
-.. _PyPy: http://pypy.org/
-.. _IronPython: http://ironpython.net/
+.. _uPython: http://www.python.org/
 .. _MySQL: http://www.mysql.com/
 .. _MariaDB: https://mariadb.org/
 
@@ -52,21 +36,18 @@ Requirements
 Installation
 ------------
 
-The last stable release is available on PyPI and can be installed with ``pip``::
-
-    $ pip install PyMySQL
+    Clone from Git and copy the upymysql folder onto your microcontroller
 
 
 Documentation
 -------------
 
-Documentation is available online: http://pymysql.readthedocs.io/
-
-For support, please refer to the `StackOverflow
-<http://stackoverflow.com/questions/tagged/pymysql>`_.
+    You're pretty much looking at it
 
 Example
 -------
+
+No Guarantees that these work yet:
 
 The following examples make use of a simple table
 
@@ -130,6 +111,8 @@ MySQL client/server protocol:
 http://dev.mysql.com/doc/internals/en/client-server-protocol.html
 
 PyMySQL mailing list: https://groups.google.com/forum/#!forum/pymysql-users
+
+PyMySQL Github site: https://github.com/PyMySQL/PyMySQL
 
 License
 -------
