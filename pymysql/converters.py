@@ -1,9 +1,8 @@
-from ._compat import PY2, text_type, long_type, JYTHON, IRONPYTHON, unichr
+from ._compat import text_type, long_type, unichr
 
 #import datetime
 #from decimal import Decimal
 
-#from .otime import time#as qtime
 from . import otime as time
 
 try: 
@@ -78,38 +77,16 @@ def _escape_unicode(value, mapping=None):
     """
     return value.translate(_escape_table)
 
-if PY2:
-    def escape_string(value, mapping=None):
-        """escape_string escapes *value* but not surround it with quotes.
+escape_string = _escape_unicode
 
-        Value should be bytes or unicode.
-        """
-        if isinstance(value, unicode):
-            return _escape_unicode(value)
-        assert isinstance(value, (bytes, bytearray))
-        value = value.replace('\\', '\\\\')
-        value = value.replace('\0', '\\0')
-        value = value.replace('\n', '\\n')
-        value = value.replace('\r', '\\r')
-        value = value.replace('\032', '\\Z')
-        value = value.replace("'", "\\'")
-        value = value.replace('"', '\\"')
-        return value
+# On Python ~3.5, str.decode('ascii', 'surrogateescape') is slow.
+# (fixed in Python 3.6, http://bugs.python.org/issue24870)
+# Workaround is str.decode('latin1') then translate 0x80-0xff into 0udc80-0udcff.
+# We can escape special chars and surrogateescape at once.
+_escape_bytes_table = _escape_table + [chr(i) for i in range(0xdc80, 0xdd00)]
 
-    def escape_bytes(value, mapping=None):
-        assert isinstance(value, (bytes, bytearray))
-        return b"_binary'%s'" % escape_string(value)
-else:
-    escape_string = _escape_unicode
-
-    # On Python ~3.5, str.decode('ascii', 'surrogateescape') is slow.
-    # (fixed in Python 3.6, http://bugs.python.org/issue24870)
-    # Workaround is str.decode('latin1') then translate 0x80-0xff into 0udc80-0udcff.
-    # We can escape special chars and surrogateescape at once.
-    _escape_bytes_table = _escape_table + [chr(i) for i in range(0xdc80, 0xdd00)]
-
-    def escape_bytes(value, mapping=None):
-        return "_binary'%s'" % value.decode('latin1').translate(_escape_bytes_table)
+def escape_bytes(value, mapping=None):
+    return "_binary'%s'" % value.decode('latin1').translate(_escape_bytes_table)
 
 
 def escape_unicode(value, mapping=None):
@@ -178,7 +155,7 @@ def convert_datetime(obj):
       True
 
     """
-    if not PY2 and isinstance(obj, (bytes, bytearray)):
+    if isinstance(obj, (bytes, bytearray)):
         obj = obj.decode('ascii')
 
     m = DATETIME_RE.match(obj)
@@ -212,7 +189,7 @@ def convert_timedelta(obj):
     can accept values as (+|-)DD HH:MM:SS. The latter format will not
     be parsed correctly by this function.
     """
-    if not PY2 and isinstance(obj, (bytes, bytearray)):
+    if isinstance(obj, (bytes, bytearray)):
         obj = obj.decode('ascii')
 
     m = TIMEDELTA_RE.match(obj)
@@ -260,7 +237,7 @@ def convert_time(obj):
     to be treated as time-of-day and not a time offset, then you can
     use set this function as the converter for FIELD_TYPE.TIME.
     """
-    if not PY2 and isinstance(obj, (bytes, bytearray)):
+    if isinstance(obj, (bytes, bytearray)):
         obj = obj.decode('ascii')
 
     m = TIME_RE.match(obj)
@@ -291,7 +268,7 @@ def convert_date(obj):
       True
 
     """
-    if not PY2 and isinstance(obj, (bytes, bytearray)):
+    if isinstance(obj, (bytes, bytearray)):
         obj = obj.decode('ascii')
     try:
         return datetime.date(*[ int(x) for x in obj.split('-', 2) ])
@@ -320,7 +297,7 @@ def convert_mysql_timestamp(timestamp):
       True
 
     """
-    if not PY2 and isinstance(timestamp, (bytes, bytearray)):
+    if isinstance(timestamp, (bytes, bytearray)):
         timestamp = timestamp.decode('ascii')
     if timestamp[4] == '-':
         return convert_datetime(timestamp)
@@ -389,8 +366,7 @@ encoders = {
     #Decimal: escape_object,
 }
 
-if not PY2 or JYTHON or IRONPYTHON:
-    encoders[bytes] = escape_bytes
+encoders[bytes] = escape_bytes
 
 decoders = {
     FIELD_TYPE.BIT: convert_bit,

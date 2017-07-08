@@ -3,7 +3,7 @@
 # Error codes:
 # http://dev.mysql.com/doc/refman/5.5/en/error-messages-client.html
 #from __future__ import print_function
-from ._compat import PY2, range_type, text_type, str_type, JYTHON, IRONPYTHON
+from ._compat import range_type, text_type, str_type
 
 try:
     import errno
@@ -279,16 +279,10 @@ class MysqlPacket(object):
         """
         return self._data[position:(position+length)]
 
-    if PY2:
-        def read_uint8(self):
-            result = ord(self._data[self._position])
-            self._position += 1
-            return result
-    else:
-        def read_uint8(self):
-            result = self._data[self._position]
-            self._position += 1
-            return result
+    def read_uint8(self):
+        result = self._data[self._position]
+        self._position += 1
+        return result
 
     def read_uint16(self):
         result = struct.unpack_from('<H', self._data, self._position)[0]
@@ -355,14 +349,9 @@ class MysqlPacket(object):
         else:
             xIndex = []
         fmt = fmt.replace('x', 'b')
-        #s = struct.Struct(fmt)
-        #result = s.unpack_from(self._data, self._position)
-        print('data', self._data, self._position)
-        print('fmt', fmt)
         result = struct.unpack_from(fmt, self._data, self._position)
         #remove all the padded indexes
         result = [e for i, e in enumerate(result) if not i in xIndex]
-        print(result)
         #self._position += s.size
         self._position += struct.calcsize(fmt)
         return result
@@ -810,11 +799,8 @@ class Connection(object):
     def query(self, sql, unbuffered=False):
         # if DEBUG:
         #     print("DEBUG: sending query:", sql)
-        if isinstance(sql, text_type) and not (JYTHON or IRONPYTHON):
-            if PY2:
-                sql = sql.encode(self.encoding)
-            else:
-                sql = sql.encode(self.encoding, 'surrogateescape')
+        if isinstance(sql, text_type):
+            sql = sql.encode(self.encoding, 'surrogateescape')
         self._execute_command(COMMAND.COM_QUERY, sql)
         self._affected_rows = self._read_query_result(unbuffered=unbuffered)
         return self._affected_rows
@@ -859,7 +845,6 @@ class Connection(object):
         self.encoding = encoding
 
     def connect(self, sock=None):
-        print(self.host, self.port)
         self._closed = False
         try:
             if sock is None:

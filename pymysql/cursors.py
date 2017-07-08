@@ -8,7 +8,7 @@ try:
 except ImportError:
     import ure as re
 
-from ._compat import range_type, text_type, PY2
+from ._compat import range_type, text_type
 from . import err
 
 
@@ -116,19 +116,12 @@ class Cursor(object):
         #ensure_bytes = partial(self._ensure_bytes, encoding=conn.encoding)
 
         if isinstance(args, (tuple, list)):
-            if PY2:
-                args = tuple(map(ensure_bytes, args))
             return tuple(conn.literal(arg) for arg in args)
         elif isinstance(args, dict):
-            if PY2:
-                args = dict((self._ensure_bytes(key, conn.encoding), self._ensure_bytes(val, conn.encoding)) for
-                            (key, val) in args.items())
             return dict((key, conn.literal(val)) for (key, val) in args.items())
         else:
             # If it's not a dictionary let's try escaping it anyways.
             # Worst case it will throw a Value error
-            if PY2:
-                args = self._ensure_bytes(args, conn.encoding)
             return conn.escape(args)
 
     def mogrify(self, query, args=None):
@@ -139,8 +132,6 @@ class Cursor(object):
         This method follows the extension to the DB API 2.0 followed by Psycopg.
         """
         conn = self._get_db()
-        if PY2:  # Use bytes on Python 2 always
-            query = self._ensure_bytes(query, encoding=conn.encoding)
 
         if args is not None:
             query = query % self._escape_args(args, conn)
@@ -203,27 +194,19 @@ class Cursor(object):
         escape = self._escape_args
         if isinstance(prefix, text_type):
             prefix = prefix.encode(encoding)
-        if PY2 and isinstance(values, text_type):
-            values = values.encode(encoding)
         if isinstance(postfix, text_type):
             postfix = postfix.encode(encoding)
         sql = bytearray(prefix)
         args = iter(args)
         v = values % escape(next(args), conn)
         if isinstance(v, text_type):
-            if PY2:
-                v = v.encode(encoding)
-            else:
-                v = v.encode(encoding, 'surrogateescape')
+            v = v.encode(encoding, 'surrogateescape')
         sql += v
         rows = 0
         for arg in args:
             v = values % escape(arg, conn)
             if isinstance(v, text_type):
-                if PY2:
-                    v = v.encode(encoding)
-                else:
-                    v = v.encode(encoding, 'surrogateescape')
+                v = v.encode(encoding, 'surrogateescape')
             if len(sql) + len(v) + len(postfix) + 1 > max_stmt_length:
                 rows += self.execute(sql + postfix)
                 sql = bytearray(prefix)
@@ -352,9 +335,6 @@ class Cursor(object):
             return
         for w in ws:
             msg = w[-1]
-            if PY2:
-                if isinstance(msg, unicode):
-                    msg = msg.encode('utf-8', 'replace')
             warnings.warn(err.Warning(*w[1:3]), stacklevel=4)
 
     def __iter__(self):
