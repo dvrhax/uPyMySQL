@@ -372,14 +372,25 @@ class Cursor(object):
     NotSupportedError = err.NotSupportedError
 
 
-class DictCursorMixin(object):
-    # You can override this to use OrderedDict or other dict-like types.
+class DictCursor(Cursor):
+    """A cursor which returns results as a dictionary"""
     dict_type = dict
 
     def _do_get_result(self):
-        print(dir(super(DictCursorMixin, self)))
-        #super(DictCursorMixin, self)._do_get_result()
-        super()._do_get_result()
+        conn = self._get_db()
+
+        self.rownumber = 0
+        self._result = result = conn._result
+
+        self.rowcount = result.affected_rows
+        self.description = result.description
+        self.lastrowid = result.insert_id
+        self._rows = result.rows
+        self._warnings_handled = False
+
+        if not self._defer_warnings:
+            self._show_warnings()
+
         fields = []
         if self.description:
             for f in self._result.fields:
@@ -396,10 +407,6 @@ class DictCursorMixin(object):
         if row is None:
             return None
         return self.dict_type(zip(self._fields, row))
-
-
-class DictCursor(DictCursorMixin, Cursor):
-    """A cursor which returns results as a dictionary"""
 
 
 class SSCursor(Cursor):
@@ -520,5 +527,26 @@ class SSCursor(Cursor):
             raise err.ProgrammingError("unknown scroll mode %s" % mode)
 
 
-class SSDictCursor(DictCursorMixin, SSCursor):
+class SSDictCursor(SSCursor):
     """An unbuffered cursor, which returns results as a dictionary"""
+
+    dict_type = dict
+
+    def _do_get_result(self):
+        fields = []
+        if self.description:
+            for f in self._result.fields:
+                name = f.name
+                if name in fields:
+                    name = f.table_name + '.' + name
+                fields.append(name)
+            self._fields = fields
+
+        if fields and self._rows:
+            self._rows = [self._conv_row(r) for r in self._rows]
+
+    def _conv_row(self, row):
+        if row is None:
+            return None
+        return self.dict_type(zip(self._fields, row))
+
