@@ -1,8 +1,8 @@
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/PyMySQL/uPyMySQL/blob/master/LICENSE
+    :target: https://github.com/dvrhax/uPyMySQL/blob/master/LICENSE
 
 
-PyMySQL
+uPyMySQL
 =======
 
 .. contents:: Table of Contents
