@@ -46,7 +46,7 @@ from .converters import escape_item, escape_string, through, conversions as _con
 from .cursors import Cursor
 #from .optionfile import Parser
 from .util import byte2int, int2byte
-from . import err
+#from . import err
 
 try:
     import ssl
@@ -386,7 +386,8 @@ class MysqlPacket(object):
             self.advance(1)  # field_count == error (we already know that)
             errno = self.read_uint16()
             if DEBUG: print("errno =", errno)
-            err.raise_mysql_exception(self._data)
+            #err.raise_mysql_exception(self._data)
+            raise(ValueError)
 
     def dump(self):
         dump_packet(self._data)
@@ -677,7 +678,7 @@ class Connection(object):
     def close(self):
         """Send the quit message and close the socket"""
         if self._closed:
-            raise err.Error("Already closed")
+            raise SyntaxError("Already closed") #err.Error("Already closed")
         self._closed = True
         if self._sock is None:
             return
@@ -718,7 +719,7 @@ class Connection(object):
     def _read_ok_packet(self):
         pkt = self._read_packet()
         if not pkt.is_ok_packet():
-            raise err.OperationalError(2014, "Command Out of Sync")
+            raise SyntaxError('err.OperationalError(2014, "Command Out of Sync")')
         ok = OKPacketWrapper(pkt)
         self.server_status = ok.server_status
         return ok
@@ -824,7 +825,7 @@ class Connection(object):
                 self.connect()
                 reconnect = False
             else:
-                raise err.Error("Already closed")
+                raise SyntaxError('err.Error("Already closed")')
         try:
             self._execute_command(COMMAND.COM_PING, "")
             return self._read_ok_packet()
@@ -907,15 +908,15 @@ class Connection(object):
 
             #if isinstance(e, (OSError, IOError, socket.error)):
             if isinstance(e, (OSError)):
-                exc = err.OperationalError(
-                        2003,
-                        "Can't connect to MySQL server on %r (%s)" % (
-                            self.host, e))
-                # Keep original exception and traceback to investigate error.
-                exc.original_exception = e
-                exc.traceback = traceback.format_exc()
-                if DEBUG: print(exc.traceback)
-                raise exc
+                #exc = err.OperationalError(
+                #        2003,
+                #        "Can't connect to MySQL server on %r (%s)" % (
+                #            self.host, e))
+                ## Keep original exception and traceback to investigate error.
+                #exc.original_exception = e
+                #exc.traceback = traceback.format_exc()
+                #if DEBUG: print(exc.traceback)
+                raise SyntaxError('err.OperationalError(2003, "Can\'t connect to MySQL server on %r (%s)"' %(self.host, e))
 
             # If e is neither DatabaseError or IOError, It's a bug.
             # But raising AssertionError hides original error.
@@ -948,11 +949,11 @@ class Connection(object):
                 self._force_close()
                 if packet_number == 0:
                     # MariaDB sends error packet with seqno==0 when shutdown
-                    raise err.OperationalError(
-                        CR.CR_SERVER_LOST,
-                        "Lost connection to MySQL server during query")
-                raise err.InternalError(
-                    "Packet sequence number wrong - got %d expected %d"
+                    raise SyntaxError('err.OperationalError( \
+                        CR.CR_SERVER_LOST, \
+                        "Lost connection to MySQL server during query")')
+                raise SyntaxError('err.InternalError( \
+                    "Packet sequence number wrong - got %d expected %d"'
                     % (packet_number, self._next_seq_id))
             self._next_seq_id = (self._next_seq_id + 1) % 256
 
@@ -978,13 +979,13 @@ class Connection(object):
                 if e.errno == errno.EINTR:
                     continue
                 self._force_close()
-                raise err.OperationalError(
-                    CR.CR_SERVER_LOST,
-                    "Lost connection to MySQL server during query (%s)" % (e,))
+                raise SyntaxError('err.OperationalError( \
+                    CR.CR_SERVER_LOST, \
+                    "Lost connection to MySQL server during query (%s)"' % (e,))
         if len(data) < num_bytes:
             self._force_close()
-            raise err.OperationalError(
-                CR.CR_SERVER_LOST, "Lost connection to MySQL server during query")
+            raise SyntaxError('err.OperationalError( \
+                CR.CR_SERVER_LOST, "Lost connection to MySQL server during query")')
         return data
 
     def _write_bytes(self, data):
@@ -993,9 +994,9 @@ class Connection(object):
             self._sendall(data)
         except OSError as e:
             self._force_close()
-            raise err.OperationalError(
-                CR.CR_SERVER_GONE_ERROR,
-                "MySQL server has gone away (%r)" % (e,))
+            raise SyntaxError('err.OperationalError( \
+                CR.CR_SERVER_GONE_ERROR, \
+                "MySQL server has gone away (%r)"' % (e,))
 
     def _sendall(self, data):
         totalsent = 0
@@ -1032,7 +1033,7 @@ class Connection(object):
 
     def _execute_command(self, command, sql):
         if not self._sock:
-            raise err.InterfaceError("(0, '')")
+            raise SyntaxError('err.InterfaceError("(0, '')")')
 
         # If the last query was unbuffered, make sure it finishes before
         # sending new commands
@@ -1139,11 +1140,11 @@ class Connection(object):
                 return handler.authenticate(auth_packet)
             except AttributeError:
                 if plugin_name != b'dialog':
-                    raise err.OperationalError(2059, "Authentication plugin '%s'" \
-                              " not loaded: - %r missing authenticate method" % (plugin_name, plugin_class))
+                    raise SyntaxError('err.OperationalError(2059, "Authentication plugin \'%s\'" \
+                              " not loaded: - %r missing authenticate method"'%(plugin_name, plugin_class))
             except TypeError:
-                raise err.OperationalError(2059, "Authentication plugin '%s'" \
-                    " not loaded: - %r cannot be constructed with connection object" % (plugin_name, plugin_class))
+                raise SyntaxError('err.OperationalError(2059, "Authentication plugin \'%s\'" \
+                    " not loaded: - %r cannot be constructed with connection object"' % (plugin_name, plugin_class))
         else:
             handler = None
         if plugin_name == b"mysql_native_password":
@@ -1171,20 +1172,20 @@ class Connection(object):
                         resp = handler.prompt(echo, prompt)
                         self.write_packet(resp + b'\0')
                     except AttributeError:
-                        raise err.OperationalError(2059, "Authentication plugin '%s'" \
-                                  " not loaded: - %r missing prompt method" % (plugin_name, handler))
+                        raise SyntaxError('err.OperationalError(2059, "Authentication plugin \'%s\'" \
+                                  " not loaded: - %r missing prompt method"' % (plugin_name, handler))
                     except TypeError:
-                        raise err.OperationalError(2061, "Authentication plugin '%s'" \
-                                  " %r didn't respond with string. Returned '%r' to prompt %r" % (plugin_name, handler, resp, prompt))
+                        raise SyntaxError('err.OperationalError(2061, "Authentication plugin \'%s\'" \
+                                  " %r didn\'t respond with string. Returned \'%r\' to prompt %r"' % (plugin_name, handler, resp, prompt))
                 else:
-                    raise err.OperationalError(2059, "Authentication plugin '%s' (%r) not configured" % (plugin_name, handler))
+                    raise SyntaxError('err.OperationalError(2059, "Authentication plugin \'%s\' (%r) not configured"' % (plugin_name, handler))
                 pkt = self._read_packet()
                 pkt.check_error()
                 if pkt.is_ok_packet() or last:
                     break
             return pkt
         else:
-            raise err.OperationalError(2059, "Authentication plugin '%s' not configured" % plugin_name)
+            raise SyntaxError('err.OperationalError(2059, "Authentication plugin \'%s\' not configured"' % plugin_name)
 
         self.write_packet(data)
         pkt = self._read_packet()
@@ -1265,16 +1266,16 @@ class Connection(object):
     def get_server_info(self):
         return self.server_version
 
-    Warning = err.Warning
-    Error = err.Error
-    InterfaceError = err.InterfaceError
-    DatabaseError = err.DatabaseError
-    DataError = err.DataError
-    OperationalError = err.OperationalError
-    IntegrityError = err.IntegrityError
-    InternalError = err.InternalError
-    ProgrammingError = err.ProgrammingError
-    NotSupportedError = err.NotSupportedError
+    #Warning = err.Warning
+    #Error = err.Error
+    #InterfaceError = err.InterfaceError
+    #DatabaseError = err.DatabaseError
+    #DataError = err.DataError
+    #OperationalError = err.OperationalError
+    #IntegrityError = err.IntegrityError
+    #InternalError = err.InternalError
+    #ProgrammingError = err.ProgrammingError
+    #NotSupportedError = err.NotSupportedError
 
 
 class MySQLResult(object):

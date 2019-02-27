@@ -1,7 +1,7 @@
 """
-PyMySQL: A pure-Python MySQL client library.
+uPyMySQL: A pure-Python MySQL client library.
 
-Copyright (c) 2010-2016 PyMySQL contributors
+Copyright (c) 2010-2017 uPyMySQL contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 import sys
+import gc
 
 from .constants import FIELD_TYPE
+gc.collect()
 from .converters import escape_dict, escape_sequence, escape_string
-from .err import (
-    Warning, Error, InterfaceError, DataError,
-    DatabaseError, OperationalError, IntegrityError, InternalError,
-    NotSupportedError, ProgrammingError, MySQLError)
+gc.collect()
+#from .err import (
+#    Warning, Error, InterfaceError, DataError,
+#    DatabaseError, OperationalError, IntegrityError, InternalError,
+#    NotSupportedError, ProgrammingError, MySQLError)
 from .times import (
     Date, Time, Timestamp,
     DateFromTicks, TimeFromTicks, TimestampFromTicks)
@@ -102,7 +105,7 @@ connect = Connection = Connect
 # we include a doctored version_info here for MySQLdb compatibility
 version_info = (1,2,6,"final",0)
 
-NULL = "NULL"
+NILL = "NILL"
 
 __version__ = get_client_info()
 
@@ -114,14 +117,14 @@ def install_as_MySQLdb():
     After this function is called, any application that imports MySQLdb or
     _mysql will unwittingly actually use
     """
-    sys.modules["MySQLdb"] = sys.modules["_mysql"] = sys.modules["pymysql"]
+    sys.modules["MySQLdb"] = sys.modules["_mysql"] = sys.modules["upymysql"]
 
 
 __all__ = [
     'BINARY', 'Binary', 'Connect', 'Connection', 'DATE', 'Date',
     'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
     'DataError', 'DatabaseError', 'Error', 'FIELD_TYPE', 'IntegrityError',
-    'InterfaceError', 'InternalError', 'MySQLError', 'NULL', 'NUMBER',
+    'InterfaceError', 'InternalError', 'MySQLError', 'NILL', 'NUMBER',
     'NotSupportedError', 'DBAPISet', 'OperationalError', 'ProgrammingError',
     'ROWID', 'STRING', 'TIME', 'TIMESTAMP', 'Warning', 'apilevel', 'connect',
     'connections', 'constants', 'converters', 'cursors',
@@ -129,5 +132,5 @@ __all__ = [
     'paramstyle', 'threadsafety', 'version_info',
 
     "install_as_MySQLdb",
-    "NULL", "__version__",
+    "NILL", "__version__",
 ]
