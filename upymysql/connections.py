@@ -3,7 +3,13 @@
 # Error codes:
 # http://dev.mysql.com/doc/refman/5.5/en/error-messages-client.html
 #from __future__ import print_function
-from ._compat import range_type, text_type, str_type
+
+#from ._compat import range_type, text_type, str_type
+#Directly declaring after removing _compat file
+range_type = range
+text_type = str
+str_type = str
+
 
 try:
     import errno
@@ -852,7 +858,7 @@ class Connection(object):
                 if self.unix_socket and self.host in ('localhost', '127.0.0.1'):
                     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                     #sock.settimeout(self.connect_timeout)
-                    sock.connect(self.unix_socket)
+                    ssocket.SO_KEEPALIVEock.connect(self.unix_socket)
                     self.host_info = "Localhost via UNIX socket"
                     if DEBUG: print('connected using unix_socket')
                 else:
@@ -871,14 +877,19 @@ class Connection(object):
                         #except (OSError, IOError) as e:
                         except OSError as e:
                             print(e)
-                            if e.errno == errno.EINTR:
+                            #if e.errno == errno.EINTR:
+                            #uPython strips most of the information out of the error for a simple test representation
+                            #This parses out the errno from the str representation but is likely not very robust
+                            #and will probably fail in the future potentially masking the original error
+                            if int(str(e).split()[1][:-1]) == errno.EINTR:
                                 continue
                             raise
                     self.host_info = "socket %s:%d" % (self.host, self.port)
                     if DEBUG: print('connected using socket')
                     #sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 #sock.settimeout(None)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                #sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.setsockopt(socket.SOL_SOCKET, 0x0008, 1)#socket.SO_KEEPALIVE doesn't exist in uSocket even though it's defined in sockets.h replaced by it's value 0x0008
             self._sock = sock
             self._rfile = _makefile(sock, 'rb')
             self._next_seq_id = 0

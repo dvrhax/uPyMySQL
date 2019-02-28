@@ -1,9 +1,14 @@
-from ._compat import text_type, long_type, unichr
+#from ._compat import text_type, long_type, unichr
+#Directly declaring after removing _compat file
+text_type = str
+long_type = int
+unichr = chr
+
 
 #import datetime
 #from decimal import Decimal
 
-from . import otime as time
+import utime as time
 
 try: 
     import re
@@ -13,6 +18,11 @@ except ImportError:
 from .constants import FIELD_TYPE, FLAG
 from .charset import charset_by_id, charset_to_encoding
 
+def translate(s, table):
+    out = ''
+    for e in s:
+        out+=table[ord(e)]
+    return out
 
 def escape_item(val, charset, mapping=None):
     if mapping is None:
@@ -75,7 +85,7 @@ def _escape_unicode(value, mapping=None):
 
     Value should be unicode
     """
-    return value.translate(_escape_table)
+    return translate(value, _escape_table)
 
 escape_string = _escape_unicode
 
@@ -86,7 +96,8 @@ escape_string = _escape_unicode
 _escape_bytes_table = _escape_table + [chr(i) for i in range(0xdc80, 0xdd00)]
 
 def escape_bytes(value, mapping=None):
-    return "_binary'%s'" % value.decode('latin1').translate(_escape_bytes_table)
+    #return "_binary'%s'" % value.decode('latin1').translate(_escape_bytes_table)
+    return "_binary'%s'" % translate(value.decode('latin1'), _escape_bytes_table)
 
 
 def escape_unicode(value, mapping=None):
@@ -96,7 +107,7 @@ def escape_str(value, mapping=None):
     return "'%s'" % escape_string(str(value), mapping)
 
 def escape_None(value, mapping=None):
-    return 'NULL'
+    return 'NILL'
 
 def escape_timedelta(obj, mapping=None):
     seconds = int(obj.seconds) % 60

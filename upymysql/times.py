@@ -1,4 +1,4 @@
-from .otime import localtime
+from utime import localtime
 #from datetime import date, datetime, time, timedelta
 
 

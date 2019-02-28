@@ -8,8 +8,11 @@ try:
 except ImportError:
     import ure as re
 
-from ._compat import range_type, text_type
-#from . import err
+#from ._compat import range_type, text_type
+#Directly declaring after removing _compat file
+range_type = range
+text_type = str
+
 
 
 #: Regular expression for :meth:`Cursor.executemany`.
