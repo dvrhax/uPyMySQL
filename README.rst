@@ -37,6 +37,8 @@ Installation
 ------------
 
     Clone from Git and copy the upymysql folder onto your microcontroller
+    Most likely directly copying onto your microcontroller will fail.  
+    You will likely need to re-compile micropython including upymysql into the firmware
 
 
 Documentation
