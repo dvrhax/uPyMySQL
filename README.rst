@@ -64,15 +64,16 @@ The following examples make use of a simple table
 
 .. code:: python
 
-    import pymysql.cursors
+    import upymysql
+    import upymysql.cursors
 
     # Connect to the database
-    connection = pymysql.connect(host='localhost',
+    connection = upymysql.connect(host='localhost',
                                  user='user',
                                  password='passwd',
                                  db='db',
                                  charset='utf8mb4',
-                                 cursorclass=pymysql.cursors.DictCursor)
+                                 cursorclass=upymysql.cursors.DictCursor)
 
     try:
         with connection.cursor() as cursor:
