@@ -16,6 +16,9 @@ try:
 except ImportError:
     import uerrno as errno
 
+if not 'EINTR' in dir(errno): #This error number appears to have been removed from some ports in micropython
+    errno.EINTR=4
+
 #from functools import partial
 try:
     import hashlib
